@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite' // Verification comment for git push setup
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 

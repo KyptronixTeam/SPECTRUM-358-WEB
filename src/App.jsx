@@ -11,6 +11,7 @@ import SettingsPage from "./pages/SettingsPage";
 import SecuritySettings from "./pages/SecuritySettings";
 import ContentModeration from "./pages/ContentModeration/ContentModeration";
 import PostsManagement from "./pages/Posts/PostsManagement";
+import TicketChat from "./pages/Tickets/TicketChat";
 import { AuthProvider } from "./contexts/AuthContext.jsx";
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
             {/* Add more routes here that need the sidebar */}
             <Route path="/users" element={<UserManagement/>} />
             <Route path="/tickets" element={<TicketManagement/>} />
+            <Route path="/tickets/:id/chat" element={<TicketChat/>} />
             <Route
               path="/packages"
               element={<PackageManagement/>}

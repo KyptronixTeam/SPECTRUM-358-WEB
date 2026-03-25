@@ -12,11 +12,14 @@ import {
   X,
   Edit,
   Trash2,
+  MessageSquare,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
 import { ticketService } from "../../services/api";
 
 const TicketManagement = () => {
+  const navigate = useNavigate();
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
   const [tickets, setTickets] = useState([]);
   const [stats, setStats] = useState({
@@ -380,6 +383,13 @@ const TicketManagement = () => {
                         <Edit className="w-5 h-5" />
                       </button>
                       <button
+                        onClick={() => navigate(`/tickets/${ticket.id}/chat`)}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Chat"
+                      >
+                        <MessageSquare className="w-5 h-5" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(ticket)}
                         className="text-red-500 hover:text-red-700"
                         title="Delete"
@@ -436,6 +446,13 @@ const TicketManagement = () => {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
+                        onClick={() => navigate(`/tickets/${ticket.id}/chat`)}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Chat"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(ticket)}
                         className="text-red-500 hover:text-red-700"
                         title="Delete"
@@ -476,6 +493,13 @@ const TicketManagement = () => {
                             title="Edit"
                           >
                             <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => navigate(`/tickets/${ticket.id}/chat`)}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Chat"
+                          >
+                            <MessageSquare className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(ticket)}

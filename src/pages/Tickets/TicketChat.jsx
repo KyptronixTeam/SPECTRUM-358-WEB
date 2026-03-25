@@ -168,7 +168,7 @@ const TicketChat = () => {
   const loadMessages = async () => {
     try {
       setLoadingMessages(true);
-      const data = await ticketService.getMessages(id);
+      const data = await ticketService.getTicketMessages(id);
       setMessages(Array.isArray(data.messages) ? data.messages : []);
     } catch (e) {
       console.error("Load messages error:", e);
@@ -214,7 +214,7 @@ const TicketChat = () => {
     clearImage();
 
     try {
-      await ticketService.sendMessage(id, {
+      await ticketService.sendTicketMessage(id, {
         sender: "support",
         text: text || null,
         imageUrl: imagePreview || null,

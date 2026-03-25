@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
     BY_ID: (id) => `${API_BASE_URL}/api/tickets/${id}`,
     BY_USER: (userId) => `${API_BASE_URL}/api/tickets/user/${userId}`,
     COMMENTS: (id) => `${API_BASE_URL}/api/tickets/${id}/comments`,
+    MESSAGES: (id) => `${API_BASE_URL}/api/tickets/${id}/messages`,
     STATS: `${API_BASE_URL}/api/tickets/stats`,
   },
 

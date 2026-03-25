@@ -199,6 +199,19 @@ export const ticketService = {
     });
   },
 
+  // Get ticket messages (chat)
+  getTicketMessages: async (id) => {
+    return apiCall(API_ENDPOINTS.TICKETS.MESSAGES(id));
+  },
+
+  // Send a message to ticket chat
+  sendTicketMessage: async (id, messageData) => {
+    return apiCall(API_ENDPOINTS.TICKETS.MESSAGES(id), {
+      method: "POST",
+      body: JSON.stringify(messageData),
+    });
+  },
+
   // Get ticket stats
   getStats: async () => {
     return apiCall(API_ENDPOINTS.TICKETS.STATS);

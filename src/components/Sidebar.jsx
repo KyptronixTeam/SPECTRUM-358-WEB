@@ -251,17 +251,15 @@ const Sidebar = () => {
         rel="stylesheet"
       />
 
-      {/* Mobile Hamburger Button */}
-      <button
-        onClick={toggleMobileMenu}
-        className="fixed top-4 left-4 z-50 p-2 bg-[#E5B700] text-white rounded-md shadow-lg sm:hidden poppins-medium"
-      >
-        {isMobileMenuOpen ? (
-          <X className="w-6 h-6" />
-        ) : (
+      {/* Mobile Hamburger Button - Only shown when menu is closed */}
+      {!isMobileMenuOpen && (
+        <button
+          onClick={toggleMobileMenu}
+          className="fixed top-4 left-4 z-50 p-2 bg-[#E5B700] text-white rounded-md shadow-lg sm:hidden poppins-medium"
+        >
           <Menu className="w-6 h-6" />
-        )}
-      </button>
+        </button>
+      )}
 
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
@@ -282,7 +280,14 @@ const Sidebar = () => {
           width: "300px",
         }}
       >
-        <div className="px-8 py-6">
+        <div className="px-8 py-6 relative">
+          {/* Close button inside sidebar for mobile */}
+          <button
+            onClick={toggleMobileMenu}
+            className="absolute top-4 right-4 p-1 text-gray-400 hover:text-[#E5B700] sm:hidden"
+          >
+            <X className="w-6 h-6" />
+          </button>
           <h1 className="text-3xl poppins-bold text-[#E5B700] text-center no-underline">
             Spectrum 358
           </h1>

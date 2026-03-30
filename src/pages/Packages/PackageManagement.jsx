@@ -344,9 +344,15 @@ const PackageManagement = () => {
                 <h3 className="text-lg sm:text-xl md:text-2xl font-semibold">
                   Package Management
                 </h3>
-                <p className="text-sm sm:text-base text-gray-600 mt-1">
-                  Manage your team members and their account permissions here.
+                <p className="text-sm sm:text-base text-gray-600 mt-1 poppins-regular">
+                  Create and manage subscription packages for your users.
                 </p>
+                {loading && (
+                  <div className="flex items-center mt-2 text-[#E5B700] space-x-2">
+                    <div className="w-4 h-4 border-2 border-[#E5B700] border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-xs font-medium poppins-medium italic">Syncing packages...</span>
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setShowCreatePackageModal(true)}
@@ -392,11 +398,11 @@ const PackageManagement = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan="8"
-                      className="px-6 py-8 text-center text-gray-500"
-                    >
-                      Loading packages...
+                    <td colSpan="8" className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <div className="w-10 h-10 border-4 border-[#E5B700] border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-gray-400 text-sm font-medium animate-pulse">Loading packages from server...</p>
+                      </div>
                     </td>
                   </tr>
                 ) : packages.length === 0 ? (
@@ -483,7 +489,18 @@ const PackageManagement = () => {
           {/* Tablet View */}
           <div className="hidden md:block lg:hidden">
             <div className="divide-y divide-gray-200">
-              {packages.map((pkg, index) => (
+              {loading ? (
+                <div className="p-12 text-center">
+                  <div className="w-8 h-8 border-3 border-[#E5B700] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <p className="text-gray-400 text-xs font-medium">Loading packages...</p>
+                </div>
+              ) : packages.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Package className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">No packages found</p>
+                </div>
+              ) : (
+                packages.map((pkg, index) => (
                 <div
                   key={pkg.packageId || pkg.id}
                   className="p-4 hover:bg-gray-50"
@@ -554,14 +571,25 @@ const PackageManagement = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
             </div>
           </div>
 
           {/* Mobile View */}
           <div className="block md:hidden">
             <div className="divide-y divide-gray-200">
-              {packages.map((pkg, index) => (
+              {loading ? (
+                <div className="p-10 text-center">
+                  <div className="w-6 h-6 border-2 border-[#E5B700] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-gray-400 text-[10px]">Loading...</p>
+                </div>
+              ) : packages.length === 0 ? (
+                <div className="p-10 text-center">
+                  <p className="text-gray-500 text-xs">No packages found</p>
+                </div>
+              ) : (
+                packages.map((pkg, index) => (
                 <div key={pkg.packageId || pkg.id} className="p-3">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -637,7 +665,8 @@ const PackageManagement = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
             </div>
           </div>
         </div>

@@ -13,10 +13,14 @@ import {
   Edit,
   Trash2,
   MessageSquare,
+  UserCircle,
+  Phone,
+  Globe,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/Header";
-import { ticketService } from "../../services/api";
+import { ticketService, authService } from "../../services/api";
 
 const TicketManagement = () => {
   const navigate = useNavigate();
@@ -38,6 +42,7 @@ const TicketManagement = () => {
     assignee: "",
     description: "",
   });
+  const [loading, setLoading] = useState(true);
 
   // Local toaster
   const [toast, setToast] = useState({
@@ -69,6 +74,13 @@ const TicketManagement = () => {
     }
   };
 
+  const truncateWords = (text, maxWords) => {
+    if (!text) return "";
+    const words = text.split(/\s+/);
+    if (words.length <= maxWords) return text;
+    return words.slice(0, maxWords).join(" ") + "...";
+  };
+
   const loadStats = async () => {
     try {
       const data = await ticketService.getStats();
@@ -85,10 +97,13 @@ const TicketManagement = () => {
 
   const loadTickets = async () => {
     try {
+      setLoading(true);
       const data = await ticketService.getTickets();
       setTickets(Array.isArray(data.tickets) ? data.tickets : []);
     } catch (e) {
       console.error("Failed to load tickets", e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -119,6 +134,30 @@ const TicketManagement = () => {
     lastUpdate: "",
   });
   const [editLoading, setEditLoading] = useState(false);
+
+  // User details modal
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userLoading, setUserLoading] = useState(false);
+
+  const handleViewUser = async (userId) => {
+    if (!userId) {
+      showToast("No User ID associated with this ticket", "error");
+      return;
+    }
+    setUserLoading(true);
+    setShowUserModal(true);
+    try {
+      const data = await authService.getProfile(userId);
+      setSelectedUser(data.user || data);
+    } catch (e) {
+      console.error("Failed to load user details", e);
+      showToast(e?.message || "Failed to load user profile", "error");
+      setShowUserModal(false);
+    } finally {
+      setUserLoading(false);
+    }
+  };
 
   const openEdit = (ticket) => {
     setEditingTicket(ticket);
@@ -298,9 +337,15 @@ const TicketManagement = () => {
                 <h3 className="text-lg sm:text-xl md:text-2xl font-semibold">
                   Ticket Management
                 </h3>
-                <p className="text-sm sm:text-base text-gray-600 mt-1">
-                  Manage your team members and their account permissions here.
+                <p className="text-sm sm:text-base text-gray-600 mt-1 poppins-regular">
+                  Overview of all support tickets and their current status.
                 </p>
+                {loading && (
+                  <div className="flex items-center mt-2 text-[#E5B700] space-x-2">
+                    <div className="w-4 h-4 border-2 border-[#E5B700] border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-xs font-medium poppins-medium italic">Syncing tickets...</span>
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => setShowNewTicketModal(true)}
@@ -333,21 +378,37 @@ const TicketManagement = () => {
                     Last Update
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assign To
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Action
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {tickets.map((ticket) => (
+              <tbody className="bg-white divide-y divide-gray-200 relative">
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <div className="w-10 h-10 border-4 border-[#E5B700] border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-gray-400 text-sm font-medium animate-pulse">Loading tickets from server...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : tickets.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-2">
+                        <Ticket className="w-12 h-12 text-gray-200" />
+                        <p className="text-gray-500 font-medium">No tickets found</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  tickets.map((ticket) => (
                   <tr key={ticket.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {ticket.ticketId || ticket.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {ticket.subject}
+                    <td className="px-6 py-4 text-sm text-gray-900" title={ticket.subject}>
+                      {truncateWords(ticket.subject, 8)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -371,10 +432,14 @@ const TicketManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDate(ticket.lastUpdate)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {ticket.assignee}
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 space-x-2">
+                      <button
+                        onClick={() => handleViewUser(ticket.userId)}
+                        className="text-indigo-500 hover:text-indigo-700"
+                        title="View User Details"
+                      >
+                        <UserCircle className="w-5 h-5" />
+                      </button>
                       <button
                         onClick={() => openEdit(ticket)}
                         className="text-gray-600 hover:text-gray-800"
@@ -398,15 +463,25 @@ const TicketManagement = () => {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
 
-          {/* Tablet View */}
-          <div className="hidden md:block lg:hidden">
-            <div className="divide-y divide-gray-200">
-              {tickets.map((ticket) => (
+          {/* Tablet/Mobile View */}
+          <div className="lg:hidden divide-y divide-gray-200 bg-white">
+            {loading ? (
+              <div className="p-12 text-center">
+                <div className="w-8 h-8 border-3 border-[#E5B700] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-gray-400 text-xs font-medium">Loading tickets...</p>
+              </div>
+            ) : tickets.length === 0 ? (
+              <div className="p-12 text-center">
+                <Ticket className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">No tickets found</p>
+              </div>
+            ) : (
+              tickets.map((ticket) => (
                 <div key={ticket.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
@@ -439,6 +514,13 @@ const TicketManagement = () => {
                     </div>
                     <div className="flex items-center space-x-3">
                       <button
+                        onClick={() => handleViewUser(ticket.userId)}
+                        className="text-indigo-500 hover:text-indigo-700"
+                        title="View User Details"
+                      >
+                        <UserCircle className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => openEdit(ticket)}
                         className="text-gray-600 hover:text-gray-800"
                         title="Edit"
@@ -461,96 +543,9 @@ const TicketManagement = () => {
                       </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-600">
-                    <span>
-                      Assigned to:{" "}
-                      <span className="font-medium text-gray-900">
-                        {ticket.assignee}
-                      </span>
-                    </span>
-                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Mobile View */}
-          <div className="block md:hidden">
-            <div className="divide-y divide-gray-200">
-              {tickets.map((ticket) => (
-                <div key={ticket.id} className="p-3">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-medium text-gray-900">
-                          {ticket.ticketId || ticket.id}
-                        </h4>
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => openEdit(ticket)}
-                            className="text-gray-600 hover:text-gray-800"
-                            title="Edit"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => navigate(`/tickets/${ticket.id}/chat`)}
-                            className="text-blue-500 hover:text-blue-700"
-                            title="Chat"
-                          >
-                            <MessageSquare className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(ticket)}
-                            className="text-red-500 hover:text-red-700"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                            ticket.status
-                          )}`}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-current mr-1"></span>
-                          {ticket.status}
-                        </span>
-                        <span
-                          className={`text-xs font-medium ${getPriorityColor(
-                            ticket.priority
-                          )}`}
-                        >
-                          {ticket.priority}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 text-xs text-gray-600">
-                    <div className="flex justify-between">
-                      <span className="font-medium">Subject:</span>
-                      <span className="text-gray-900 text-right max-w-[60%]">
-                        {ticket.subject}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Last Update:</span>
-                      <span className="text-gray-900">
-                        {formatDate(ticket.lastUpdate)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Assigned to:</span>
-                      <span className="text-gray-900">{ticket.assignee}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -665,18 +660,6 @@ const TicketManagement = () => {
                       onChange={handleChange("lastUpdate")}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Assign To
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter Assignee Name"
-                      className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E5B700] focus:border-transparent placeholder-gray-400 text-sm"
-                      value={newTicket.assignee}
-                      onChange={handleChange("assignee")}
-                    />
-                  </div>
                 </div>
 
                 <div>
@@ -752,17 +735,6 @@ const TicketManagement = () => {
                       className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E5B700] focus:border-transparent text-sm"
                       value={editForm.subject}
                       onChange={handleEditChange("subject")}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Assign To
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#E5B700] focus:border-transparent text-sm"
-                      value={editForm.assignee}
-                      onChange={handleEditChange("assignee")}
                     />
                   </div>
                 </div>
@@ -863,6 +835,148 @@ const TicketManagement = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* User Details Modal */}
+      {showUserModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowUserModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <button
+              onClick={() => setShowUserModal(false)}
+              className="absolute right-4 top-4 z-10 text-gray-400 hover:text-gray-600 transition-colors bg-white rounded-full p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {userLoading ? (
+              <div className="p-12 flex flex-col items-center justify-center space-y-4">
+                <div className="w-12 h-12 border-4 border-[#E5B700] border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-gray-500 font-medium">Loading user details...</p>
+              </div>
+            ) : selectedUser ? (
+              <div className="p-0">
+                {/* Modal Header/Profile Part */}
+                <div className="bg-[#011F3F] p-8 text-center text-white">
+                  <div className="relative inline-block">
+                    {selectedUser.profilePicture ? (
+                      <img
+                        src={selectedUser.profilePicture}
+                        alt="Profile"
+                        className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-gray-200 flex items-center justify-center text-gray-500">
+                        <UserCircle className="w-16 h-16 text-gray-400" />
+                      </div>
+                    )}
+                    <span
+                      className={`absolute bottom-1 right-1 w-6 h-6 rounded-full border-4 border-white ${
+                        selectedUser.isActive !== false ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    ></span>
+                  </div>
+                  <h3 className="text-2xl font-bold mt-4 poppins-bold uppercase tracking-tight">
+                    {selectedUser.firstName && selectedUser.firstName !== "User" 
+                      ? `${selectedUser.firstName} ${selectedUser.lastName}` 
+                      : selectedUser.email.split('@')[0]}
+                  </h3>
+                  <p className="text-blue-200 text-xs mt-1 uppercase tracking-widest font-bold opacity-80">
+                    {selectedUser.role || "User"} Account
+                  </p>
+                </div>
+
+                {/* Body Details */}
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="bg-[#E5B700]/10 p-2.5 rounded-lg">
+                        <Bell className="w-4 h-4 text-[#E5B700]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Email Address</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate">{selectedUser.email}</p>
+                      </div>
+                    </div>
+
+                    {selectedUser.phone && (
+                      <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div className="bg-[#E5B700]/10 p-2.5 rounded-lg">
+                          <Phone className="w-4 h-4 text-[#E5B700]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Phone Number</p>
+                          <p className="text-sm font-semibold text-gray-900 truncate">{selectedUser.phone}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedUser.country && (
+                        <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                          <div className="bg-[#E5B700]/10 p-2 rounded-lg">
+                            <Globe className="w-4 h-4 text-[#E5B700]" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Country</p>
+                            <p className="text-xs font-semibold text-gray-900">{selectedUser.country}</p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedUser.businessCategory && (
+                        <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                          <div className="bg-[#E5B700]/10 p-2 rounded-lg">
+                            <Briefcase className="w-4 h-4 text-[#E5B700]" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Category</p>
+                            <p className="text-xs font-semibold text-gray-900">{selectedUser.businessCategory}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Status</p>
+                        <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold ${
+                          selectedUser.isActive !== false ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                        }`}>
+                          {selectedUser.isActive !== false ? "ACTIVE" : "INACTIVE"}
+                        </span>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Joined On</p>
+                        <p className="text-xs font-bold text-gray-900">
+                          {selectedUser.createdAt ? formatDate(selectedUser.createdAt) : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowUserModal(false)}
+                    className="w-full mt-2 py-3.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all shadow-lg active:scale-[0.98] poppins-semibold"
+                  >
+                    Close Profile
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <p className="text-red-500 font-medium">User details could not be loaded.</p>
+                <button
+                  onClick={() => setShowUserModal(false)}
+                  className="mt-4 px-6 py-2 bg-gray-900 text-white rounded-lg"
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

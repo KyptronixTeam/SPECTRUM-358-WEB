@@ -101,7 +101,7 @@ const Header = ({ title, icon: Icon }) => {
   return (
     <>
       {/* Desktop & Tablet Header */}
-      <div className="w-full flex justify-between items-center px-3 sm:px-4 md:px-6 lg:px-10 py-3 bg-white">
+      <div className="w-full flex justify-between items-center px-3 sm:px-4 md:px-6 lg:px-10 py-3 bg-white sticky top-0 z-30 shadow-sm border-b border-gray-100">
         {/* Left section: Icon + Title - Hidden on mobile, shown on md+ */}
         <div className="hidden md:flex items-center gap-2 sm:gap-3 md:gap-4 lg:gap-6">
           {Icon && <Icon className="w-4 h-4 sm:w-5 sm:h-5" />}

@@ -310,7 +310,7 @@ const TicketChat = () => {
                     {currentStatus}
                   </span>
                 </div>
-                <MetaRow label="Assigned To" value={ticket.assignee} />
+                {/* <MetaRow label="Assigned To" value={ticket.assignee} /> */}
                 <MetaRow label="Created On" value={formatFull(ticket.createdAt)} />
                 <MetaRow label="Last Updated" value={formatFull(ticket.updatedAt || ticket.lastUpdate)} />
                 <MetaRow
